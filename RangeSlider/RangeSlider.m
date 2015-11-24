@@ -334,6 +334,48 @@ static CGFloat kThumbHitInset = 10;
     }
 }
 
+- (void)setMinimumRange:(CGFloat)minimumRange maximumRange:(CGFloat)maximumRange {
+    NSAssert(minimumRange <= maximumRange, @"minimumRange cannot be greater than maximumRange");
+    
+    if( fabs(minimumRange - _minimumRange) < FLT_EPSILON && fabs(maximumRange - _maximumValue) < FLT_EPSILON ) {
+        return;
+    }
+    
+    _minimumRange = minimumRange;
+    _maximumRange = maximumRange;
+    
+    if(_maximumValue > maximumRange) {
+        _maximumValue = maximumRange;
+    }
+    
+    if(_minimumValue < minimumRange) {
+        _minimumValue = minimumRange;
+    }
+    
+    [self setNeedsUpdateConstraints];
+}
+
+- (void)setMinimumValue:(CGFloat)minimumValue maximumValue:(CGFloat)maximumValue {
+    NSAssert(minimumValue <= maximumValue, @"minimumValue cannot be greater than maximumValue");
+    
+    if( fabs(minimumValue - _minimumValue) < FLT_EPSILON && fabs(maximumValue - _maximumValue) < FLT_EPSILON ) {
+        return;
+    }
+    
+    if(minimumValue < _minimumRange) {
+        minimumValue = _minimumRange;
+    }
+    
+    if(maximumValue > _maximumRange) {
+        maximumValue = _maximumRange;
+    }
+    
+    _minimumValue = minimumValue;
+    _maximumValue = maximumValue;
+    
+    [self setNeedsUpdateConstraints];
+}
+
 #pragma mark - Asset generator
 #pragma mark -
 
