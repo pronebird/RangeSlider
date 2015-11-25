@@ -35,7 +35,7 @@
                                 <animations/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="number" keyPath="minimumRange">
-                                        <real key="value" value="200"/>
+                                        <real key="value" value="250"/>
                                     </userDefinedRuntimeAttribute>
                                     <userDefinedRuntimeAttribute type="number" keyPath="maximumRange">
                                         <real key="value" value="1000"/>
@@ -44,7 +44,7 @@
                                         <real key="value" value="500"/>
                                     </userDefinedRuntimeAttribute>
                                     <userDefinedRuntimeAttribute type="number" keyPath="maximumValue">
-                                        <real key="value" value="800"/>
+                                        <real key="value" value="1000"/>
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                                 <connections>

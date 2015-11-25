@@ -9,18 +9,40 @@
 #import "RangeSlider.h"
 #import <float.h>
 
+/**
+ *  Shadow height. Affects vertical center for track views.
+ */
 static CGFloat kShadowVerticalOffset = 1.0;
+
+/**
+ *  The size of thumb's arc.
+ */
 static CGFloat kThumbDimension = 24.0;
+
+/**
+ *  Track height
+ */
 static CGFloat kTrackDimension = 8.0;
-static CGFloat kThumbHitInset = 10;
+
+/**
+ * Thumb hit expansion, both vertical and horizontal.
+ */
+static CGFloat kThumbHitExpansion = 10;
+
 
 @interface RangeSliderThumb : UIImageView
 @end
 
 @implementation RangeSliderThumb
 
+/*
+ Override hit test to make larger hit area for thumbs. 
+ This does not come without false positives, but
+ should not create much confusion on touch devices until certain threshold
+ of expansion area.
+ */
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
-    CGRect rect = CGRectInset([self bounds], -kThumbHitInset, -kThumbHitInset);
+    CGRect rect = CGRectInset([self bounds], -kThumbHitExpansion, -kThumbHitExpansion);
     
     return CGRectContainsPoint(rect, point);
 }
@@ -154,20 +176,11 @@ static CGFloat kThumbHitInset = 10;
     CGFloat minFraction = (self.minimumValue - self.minimumRange) / entireRange;
     CGFloat maxFraction = (self.maximumValue - self.minimumRange) / entireRange;
     
-    self.minimimRangeConstraint.constant = minFraction * CGRectGetWidth(self.bounds);
-    self.maximumRangeConstraint.constant = maxFraction * CGRectGetWidth(self.bounds);
-}
-
-- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
-    for(UIView *view in self.subviews) {
-        CGPoint pointInView = [self convertPoint:point toView:view];
-        
-        if([view pointInside:pointInView withEvent:event]) {
-            return YES;
-        }
-    }
+    CGFloat minConstraintRange = [self minimumConstantForThumbLeadingConstraint];
+    CGFloat maxConstraintRange = [self maximumConstantForThumbLeadingConstraint];
     
-    return [super pointInside:point withEvent:event];
+    self.minimimRangeConstraint.constant = minConstraintRange + (maxConstraintRange - minConstraintRange) * minFraction;
+    self.maximumRangeConstraint.constant = minConstraintRange + (maxConstraintRange - minConstraintRange) * maxFraction;
 }
 
 - (void)tintColorDidChange {
@@ -227,6 +240,12 @@ static CGFloat kThumbHitInset = 10;
     [self.filledTrackView.trailingAnchor constraintEqualToAnchor:self.maximumRangeView.centerXAnchor].active = YES;
     
     /*
+     Break intrinsic content size of filled track when both thumbs intersect
+     */
+    [self.filledTrackView setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+    [self.filledTrackView setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisVertical];
+    
+    /*
      Create minimum range view constraints
      */
     [self.minimumRangeView.topAnchor constraintGreaterThanOrEqualToAnchor:self.topAnchor].active = YES;
@@ -243,8 +262,8 @@ static CGFloat kThumbHitInset = 10;
     /*
      Constraint both minimum and maximum range views to the beginning of track view
      */
-    self.minimimRangeConstraint = [self.minimumRangeView.centerXAnchor constraintEqualToAnchor:self.trackView.leadingAnchor];
-    self.maximumRangeConstraint = [self.maximumRangeView.centerXAnchor constraintEqualToAnchor:self.trackView.leadingAnchor];
+    self.minimimRangeConstraint = [self.minimumRangeView.leadingAnchor constraintEqualToAnchor:self.trackView.leadingAnchor];
+    self.maximumRangeConstraint = [self.maximumRangeView.leadingAnchor constraintEqualToAnchor:self.trackView.leadingAnchor];
     
     self.minimimRangeConstraint.active = YES;
     self.maximumRangeConstraint.active = YES;
@@ -479,13 +498,25 @@ static CGFloat kThumbHitInset = 10;
     return NO;
 }
 
+- (CGFloat)horizontalShadowOverlap {
+    return (self.minimumRangeView.image.size.width - kThumbDimension) * 0.5;
+}
+
+- (CGFloat)minimumConstantForThumbLeadingConstraint {
+    return [self horizontalShadowOverlap] * -1;
+}
+
+- (CGFloat)maximumConstantForThumbLeadingConstraint {
+    return CGRectGetWidth(self.bounds) - kThumbDimension - [self horizontalShadowOverlap];
+}
+
 - (BOOL)continueTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event {
-    CGPoint dragOffset;
-    dragOffset.x = CGRectGetMidX(self.draggingView.bounds) - self.draggingViewTouchPoint.x;
-    dragOffset.y = CGRectGetMidY(self.draggingView.bounds) - self.draggingViewTouchPoint.y;
+    CGPoint location = CGPointApplyAffineTransform([touch locationInView:self], CGAffineTransformMakeTranslation(-self.draggingViewTouchPoint.x, -self.draggingViewTouchPoint.y));
     
-    CGPoint location = CGPointApplyAffineTransform([touch locationInView:self], CGAffineTransformMakeTranslation(dragOffset.x, dragOffset.y));
-    CGFloat fraction = location.x / CGRectGetWidth(self.bounds);
+    CGFloat minConstraintRange = [self minimumConstantForThumbLeadingConstraint];
+    CGFloat maxConstraintRange = [self maximumConstantForThumbLeadingConstraint];
+    
+    CGFloat fraction = (location.x - minConstraintRange ) / (maxConstraintRange - minConstraintRange);
     CGFloat value = self.minimumRange + (self.maximumRange - self.minimumRange) * fraction;
 
     if(self.draggingView == self.minimumRangeView) {
