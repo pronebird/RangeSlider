@@ -337,7 +337,7 @@ static CGFloat kThumbHitInset = 10;
 - (void)setMinimumRange:(CGFloat)minimumRange maximumRange:(CGFloat)maximumRange {
     NSAssert(minimumRange <= maximumRange, @"minimumRange cannot be greater than maximumRange");
     
-    if( fabs(minimumRange - _minimumRange) < FLT_EPSILON && fabs(maximumRange - _maximumValue) < FLT_EPSILON ) {
+    if( fabs(minimumRange - _minimumRange) < FLT_EPSILON && fabs(maximumRange - _maximumRange) < FLT_EPSILON ) {
         return;
     }
     
